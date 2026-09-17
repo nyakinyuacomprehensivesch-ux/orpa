@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORPA — ORPA Executes</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2335A9F5'/><stop offset='1' stop-color='%236B22ED'/></linearGradient></defs><rect width='40' height='40' rx='9' fill='url(%23g)'/><rect x='7' y='24' width='5' height='11' rx='1' fill='%23fff' opacity='.7'/><rect x='15' y='19' width='5' height='16' rx='1' fill='%23fff' opacity='.85'/><rect x='23' y='13' width='5' height='22' rx='1' fill='%23fff'/><rect x='25' y='5' width='10' height='12' rx='1.5' fill='%23fff'/></svg>">
+<meta name="theme-color" content="#061B36">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ORPA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<!-- ==================== AUTH: REGISTER ==================== -->
+<div id="authRegister" class="auth-screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-header orpa-visual-panel">
+      <div class="af-logo-lg"><img src="ORPA-brand.png" alt="ORPA logo"></div>
+      <div class="school-badge">ORPA</div>
+      <div class="brand-tag">orpa executes</div>
+      <div class="school-sub" style="margin-top:6px">Teacher Account Registration</div>
+    </div>
+    <div class="auth-body">
+      <div id="regErrorBox" class="auth-error-box"></div>
+      <div class="auth-field">
+        <label>Full Name</label>
+        <input id="regName" placeholder="e.g. Jane Wanjiku" autocomplete="name">
+        <div class="field-hint">As it appears on official records</div>
+      </div>
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input id="regEmail" type="email" placeholder="yourname@gmail.com" autocomplete="email">
+        <div class="field-hint" style="font-size:10px;color:var(--blue);font-weight:600">✉️ Gmail, Yahoo, Outlook or any email accepted</div>
+      </div>
+      <div class="auth-field">
+        <label>📱 Phone Number (M-Pesa)</label>
+        <div style="display:flex;gap:0;align-items:stretch;background:#fff;border:2px solid #e0e0e0;border-radius:8px;overflow:hidden;transition:.2s" onfocus="this.style.borderColor='var(--g3)';this.style.boxShadow='0 0 0 3px rgba(53,169,245,.18)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'">
+          <div style="background:var(--g5);padding:0 12px;display:flex;align-items:center;gap:4px;font-size:15px;font-weight:800;color:var(--g1);border-right:2px solid #e0e0e0;white-space:nowrap">🇰🇪 +254</div>
+          <input id="regPhone" type="tel" placeholder="7XX XXX XXX" style="flex:1;border:none;padding:12px 14px;font-size:16px;outline:none;background:transparent;letter-spacing:1px" maxlength="9">
+        </div>
+        <div class="field-hint" style="font-size:10px;color:var(--g2);font-weight:600;margin-top:4px">📱 Required for M-Pesa payments — enter your Safaricom number</div>
+      </div>
+      <div class="auth-field">
+        <label>School / Institution</label>
+        <input id="regSchool" placeholder="Enter your school name">
+        <div class="field-hint">This name appears on all reports, scoresheets & downloads</div>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="password-row">
+          <input id="regPassword" type="password" placeholder="Min 6 characters">
+          <button class="toggle-pw" onclick="togglePw('regPassword',this)" type="button">👁</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Confirm Password</label>
+        <div class="password-row">
+          <input id="regConfirm" type="password" placeholder="Re-enter password">
+          <button class="toggle-pw" onclick="togglePw('regConfirm',this)" type="button">👁</button>
+        </div>
+      </div>
+      <button class="auth-btn auth-btn-primary" onclick="doRegister()">Create Teacher Account</button>
+      <div class="auth-link" onclick="showAuth('login')">Already have an account? Sign In →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== AUTH: LOGIN ==================== -->
+<div id="authLogin" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-header orpa-visual-panel">
+      <div class="af-logo-lg"><img src="ORPA-brand.png" alt="ORPA logo"></div>
+      <div class="school-badge">ORPA</div>
+      <div class="brand-tag">orpa executes</div>
+      <div class="school-sub" style="margin-top:6px">Teacher Sign In</div>
+    </div>
+    <div class="auth-body">
+      <div id="loginErrorBox" class="auth-error-box"></div>
+      <div id="loginSuccessBox" class="auth-success-box"></div>
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input id="loginEmail" type="email" placeholder="yourname@gmail.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="password-row">
+          <input id="loginPassword" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="toggle-pw" onclick="togglePw('loginPassword',this)" type="button">👁</button>
+        </div>
+      </div>
+      <button class="auth-btn auth-btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="auth-link" onclick="showAuth('register')">Don't have an account? Register →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP (after login) ==================== -->
+<div class="app-container" id="appContainer">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo"><img src="icon-192.png" alt="ORPA logo"><span>ORPA</span></div>
+    <input id="schoolNameTop" class="school-name-input" placeholder="Enter School Name" oninput="updateSchoolName(this.value)" title="Your school name — shown on all reports & scoresheets">
+    <div class="exam-info">
+      <label>Exam:</label><input id="examName" placeholder="Mid-Term" oninput="debounceSave()">
+      <label>Term:</label><input id="examTerm" placeholder="1" style="width:36px" oninput="debounceSave()">
+      <label>Year:</label><input id="examYear" placeholder="2025" style="width:48px" oninput="debounceSave()">
+    </div>
+    <div class="tab-btns">
+      <button class="tab-btn active" data-view="entry" onclick="showView('entry',this)">Entry</button>
+      <button class="tab-btn" data-view="scoresheet" onclick="showView('scoresheet',this)">Scoresheet</button>
+      <button class="tab-btn" data-view="reports" onclick="showView('reports',this)">Reports</button>
+      <button class="tab-btn" data-view="kpi" onclick="showView('kpi',this)">KPIs</button>
+      <button class="tab-btn orpa-action" onclick="archiveCurrentGrade()" title="Archive this processed assessment securely, then clear the sheet for a fresh entry">📦 ARCHIVE</button>
+      <button class="tab-btn orpa-action fetch-action" onclick="openFetchArchive()" title="Fetch archived learner records by learner name or ADM number">🔎 FETCH</button>
+    </div>
+    <div class="user-menu">
+      <button class="user-btn" onclick="toggleUserDD()" id="userBtnLabel">👤</button>
+      <div class="user-dropdown" id="userDD">
+        <div class="dd-header"><div class="dd-name" id="ddName">-</div><div class="dd-email" id="ddEmail">-</div></div>
+        <div class="dd-item" onclick="showView('profile',null)">👤 My Profile</div>
+        <div class="dd-item" onclick="showView('payments',null)">💳 Payment History</div>
+        <div class="dd-item" onclick="showView('entry',null)">📊 Grade Entry</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item danger" onclick="doLogout()">🚪 Sign Out</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content">
+      <div id="viewEntry" class="view-panel active" style="display:flex;flex-direction:column;padding:0;overflow:hidden">
+        <div class="sheet-wrap" id="sheetWrap"></div>
+      </div>
+      <div id="viewScoresheet" class="view-panel"></div>
+      <div id="viewReports" class="view-panel"></div>
+      <div id="viewKPI" class="view-panel"></div>
+      <div id="viewProfile" class="view-panel"></div>
+      <div id="viewPayments" class="view-panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MPESA PAYMENT MODAL ==================== -->
+<div class="mpesa-overlay" id="mpesaOverlay">
+  <div class="mpesa-modal" id="mpesaModal">
+    <!-- Step 1: Payment Details -->
+    <div id="mpStep1" class="mp-body-content">
+      <div class="mp-header">
+        <div class="mp-logo">LIPA NA M-PESA</div>
+        <div class="mp-sub">Safaricom M-Pesa Online Payment</div>
+      </div>
+      <div class="mp-body">
+        <h3>Unlock Reports & Merit Lists</h3>
+        <div class="mp-desc">Pay to download/print report cards and class merit lists for Grade <span id="mpGrade">-</span>.</div>
+        <div class="price-tag">KSh 100.00</div>
+        <div class="mp-field">
+          <label>M-Pesa Phone Number</label>
+          <div class="mp-phone-prefix">
+            <select id="mpPhonePrefix"><option value="254">+254</option></select>
+            <input id="mpPhone" type="tel" placeholder="712345678" maxlength="9">
+          </div>
+          <div class="field-hint">STK Push will be sent to this number</div>
+        </div>
+        <button class="mp-modal-btn mp-pay" id="mpPayBtn" onclick="initiateMpesa()">Send M-Pesa Request</button>
+        <button class="mp-modal-btn mp-cancel" onclick="closeMpesa()">Cancel</button>
+      </div>
+    </div>
+    <!-- Step 2: STK Push Waiting -->
+    <div id="mpStep2" class="mp-body-content" style="display:none">
+      <div class="mp-header">
+        <div class="mp-logo">⏳ PROCESSING</div>
+        <div class="mp-sub">Waiting for M-Pesa confirmation</div>
+      </div>
+      <div class="mp-body">
+        <div class="mp-stk-waiting">
+          <div class="stk-spinner"></div>
+          <div class="stk-msg">STK Push Sent!</div>
+          <div class="stk-sub">Check your phone <strong id="mpDisplayPhone">-</strong> and enter your M-Pesa PIN to complete payment.</div>
+          <div class="stk-timer" id="mpTimer">0:30</div>
+          <div style="font-size:9px;color:#aaa;margin-top:8px">Do not close this window. Waiting for Safaricom confirmation…</div>
+        </div>
+        <button class="mp-modal-btn mp-cancel" onclick="closeMpesa()" style="margin-top:12px">Cancel Payment</button>
+      </div>
+    </div>
+    <!-- Step 3: Payment Success -->
+    <div id="mpStep3" class="mp-body-content" style="display:none">
+      <div class="mp-header" style="background:#1B5E20">
+        <div class="mp-logo">✅ PAYMENT SUCCESSFUL</div>
+        <div class="mp-sub">Reports unlocked</div>
+      </div>
+      <div class="mp-body">
+        <div class="mp-success">
+          <div class="check-icon">✓</div>
+          <h3>Payment Confirmed!</h3>
+          <p>Grade <span id="mpSuccessGrade">-</span> reports and merit lists are now unlocked.</p>
+          <div class="receipt-box">
+            <div class="rcpt-row"><span>Transaction ID:</span><span id="mpTxId">-</span></div>
+            <div class="rcpt-row"><span>Phone:</span><span id="mpRxPhone">-</span></div>
+            <div class="rcpt-row"><span>Grade:</span><span id="mpRxGrade">-</span></div>
+            <div class="rcpt-row"><span>Amount:</span><span id="mpRxAmount">-</span></div>
+            <div class="rcpt-row"><span>Date:</span><span id="mpRxDate">-</span></div>
+          </div>
+          <button class="mp-modal-btn mp-pay" onclick="mpesaDownloadNow()" style="margin-top:8px">📥 Download Reports Now</button>
+          <button class="mp-modal-btn mp-cancel" onclick="closeMpesa()" style="margin-top:4px">Close</button>
+        </div>
+      </div>
+    </div>
+    <!-- Step 4: Payment Failed -->
+    <div id="mpStep4" class="mp-body-content" style="display:none">
+      <div class="mp-header" style="background:#C62828">
+        <div class="mp-logo">❌ PAYMENT FAILED</div>
+        <div class="mp-sub">Transaction could not be completed</div>
+      </div>
+      <div class="mp-body">
+        <div style="text-align:center;padding:16px 0">
+          <div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:6px" id="mpFailMsg">Payment timed out or was cancelled.</div>
+          <div style="font-size:11px;color:var(--gray);margin-bottom:14px">Please ensure you have sufficient M-Pesa balance and try again.</div>
+          <button class="mp-modal-btn mp-pay" onclick="mpResetToStep1()">Try Again</button>
+          <button class="mp-modal-btn mp-cancel" onclick="closeMpesa()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ORPA ARCHIVE / FETCH ==================== -->
+<div id="archiveOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,18,28,.68);z-index:9999;padding:20px;overflow:auto">
+  <div style="max-width:1050px;margin:30px auto;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden">
+    <div style="background:linear-gradient(135deg,#04142D,#078BEB);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div><b style="font-size:19px">ORPA Archive</b><div style="font-size:11px;opacity:.8">ORPA executes — secure server records</div></div>
+      <button onclick="closeFetchArchive()" style="background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:7px 12px;cursor:pointer">✕ Close</button>
+    </div>
+    <div style="padding:18px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="archiveSearch" placeholder="Search learner Name or ADM No." style="flex:1;min-width:220px;padding:11px;border:1px solid #ccd5d1;border-radius:8px" onkeydown="if(event.key==='Enter')searchArchives()">
+        <button onclick="searchArchives()" style="padding:10px 18px">🔎 Search</button>
+        <button class="secondary" onclick="searchArchives(true)" style="padding:10px 18px">Show latest</button>
+      </div>
+      <div id="archiveResults" style="margin-top:14px"></div>
+      <div id="archiveViewer" style="display:none;margin-top:14px"></div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>window.__ORPA_BACKEND=true;</script>
+<script src="app.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="auth-backend.js"></script>
+<script>
+/* Register the service worker for offline, app-like installation. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function (err) {
+      console.warn('ORPA service worker registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>

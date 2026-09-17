@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORPA — Owner Admin</title>
+<meta name="theme-color" content="#061B36">
+<style>
+:root{--a:#169DFF;--b:#0B4EA2;--grad:linear-gradient(135deg,#04142D,#078BEB);--ink:#1e2430;--muted:#6b7280;--line:#e7e9f0;--soft:#f6f7fb;--green:#1B5E20;--red:#C62828;--orange:#E65100}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#eef0f6;color:var(--ink)}
+.top{background:var(--grad);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.top .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:18px}
+.top .mark{width:34px;height:34px;background:rgba(255,255,255,.18);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.top .who{font-size:12px;opacity:.9}
+.top button{background:rgba(255,255,255,.16);color:#fff;border:none;padding:7px 14px;border-radius:7px;font-weight:600;cursor:pointer;font-size:13px}
+.top button:hover{background:rgba(255,255,255,.28)}
+.wrap{max-width:1080px;margin:22px auto;padding:0 18px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}
+.card .n{font-size:28px;font-weight:800;color:var(--b)}
+.card .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.panel h2{margin:0;padding:14px 18px;font-size:15px;background:var(--soft);border-bottom:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;padding:10px 14px;background:#fafbff;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.on{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
+.off{background:#c9ced8}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.pill.active{background:#e6f7ed;color:var(--green)}
+.pill.suspended{background:#fdecea;color:var(--red)}
+.pill.owner{background:#efe7fd;color:var(--b)}
+.pill.pending{background:#fff3e0;color:#9a5b00}
+.btn{border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;margin:1px}
+.btn.s{background:#fff3e0;color:var(--orange)}
+.btn.a{background:#e6f7ed;color:var(--green)}
+.btn.k{background:#eef2ff;color:#3730a3}
+.btn.d{background:#fdecea;color:var(--red)}
+.btn:hover{filter:brightness(.95)}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+.err{background:#fdecea;color:var(--red);padding:10px 18px;font-size:13px;display:none}
+.hint{font-size:11px;color:var(--muted);padding:8px 18px}
+@media(max-width:720px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <div class="mark"><img src="ORPA-brand.png" alt="ORPA" style="width:30px;height:30px;border-radius:7px;object-fit:cover"></div>
+    ORPA · Owner Admin
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <span class="who" id="who"></span>
+    <button onclick="location.href='index.html'">← Back to App</button>
+  </div>
+</div>
+<div class="err" id="err"></div>
+<div class="wrap">
+  <div class="cards">
+    <div class="card"><div class="n" id="cTotal">–</div><div class="l">Total Accounts</div></div>
+    <div class="card"><div class="n" id="cOnline">–</div><div class="l">Online Now</div></div>
+    <div class="card"><div class="n" id="cActive">–</div><div class="l">Active</div></div>
+    <div class="card"><div class="n" id="cSusp">–</div><div class="l">Suspended</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>🟢 Live Sessions <span style="font-weight:400;color:#6b7280;font-size:12px">(updates in real time)</span></h2>
+    <div id="live"></div>
+  </div>
+
+  <div class="panel" id="loginRequestsPanel">
+    <h2>🔐 Login Authorization Requests <span style="font-weight:400;color:#6b7280;font-size:12px">(owner approval required)</span></h2>
+    <div id="loginRequests"></div>
+    <div class="hint">Teacher credentials are checked first. No teacher session is issued until you approve the request and give the teacher the 6-character code shown only to you.</div>
+  </div>
+
+  <div class="panel">
+    <h2>👥 All Accounts <span style="font-weight:400;color:#6b7280;font-size:12px">(new accounts require your activation)</span></h2>
+    <div id="users"></div>
+    <div class="hint">Suspend blocks login and instantly signs the user out. Force sign-out ends their current session. Delete removes the account permanently.</div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const TOKEN=localStorage.getItem('orpa_token');
+function hdr(){return{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}}
+function showErr(m){const e=document.getElementById('err');e.textContent=m;e.style.display='block'}
+function ago(ts){if(!ts)return'–';const s=Math.floor((Date.now()-new Date(ts).getTime())/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';return Math.floor(s/3600)+'h ago'}
+async function api(path,opts={}){const res=await fetch(path,Object.assign({headers:hdr()},opts));let d={};try{d=await res.json()}catch(e){}if(!res.ok)throw new Error(d.error||('Error '+res.status));return d}
+let me=null,lastUsers=[],loginRequests=[];
+async function guard(){try{const d=await api('/api/me');if(d.user.role!=='owner'){location.href='index.html';return false}me=d.user;document.getElementById('who').textContent=me.name+' · '+me.email;return true}catch(e){location.href='index.html';return false}}
+function renderLoginRequests(requests){
+  loginRequests=requests||[]; const wrap=document.getElementById('loginRequests');
+  const pending=loginRequests.filter(r=>r.status==='pending');
+  if(!pending.length){wrap.innerHTML='<div class="empty">No pending login requests.</div>';return}
+  wrap.innerHTML='<table><thead><tr><th>Teacher</th><th>Device / IP</th><th>Requested</th><th>Status</th><th>Action</th></tr></thead><tbody>'+pending.map(r=>`<tr><td><b>${esc(r.name)}</b><br><span style="color:#6b7280;font-size:11px">${esc(r.email)}</span></td><td>${esc(shortUA(r.userAgent))}<br><span style="color:#6b7280;font-size:11px">${esc(r.ip||'unknown')}</span></td><td>${ago(r.createdAt)}</td><td><span class="pill" style="background:#fff3e0;color:#E65100">PENDING</span></td><td><button class="btn a" onclick="approveLogin('${r.id}')">Approve</button><button class="btn d" onclick="denyLogin('${r.id}')">Deny</button></td></tr>`).join('')+'</tbody></table>';
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function shortUA(s){s=String(s||''); if(s.includes('Android'))return'Android'; if(s.includes('iPhone'))return'iPhone'; if(s.includes('Windows'))return'Windows / Chrome'; if(s.includes('Mac'))return'macOS'; return s.slice(0,45)||'Browser'}
+async function loadLoginRequests(){try{const d=await api('/api/admin/login-requests');renderLoginRequests(d.requests)}catch(e){showErr(e.message)}}
+async function approveLogin(id){try{const d=await api('/api/admin/login-requests/'+encodeURIComponent(id)+'/approve',{method:'POST'});alert('APPROVED\n\nAuthorization code: '+d.otp+'\n\nGive this 6-character code to the teacher. It expires in 5 minutes and can be used once.');await loadLoginRequests();notifyLocal('Login approved','Code '+d.otp+' for '+d.request.name)}catch(e){showErr(e.message)}}
+async function denyLogin(id){if(!confirm('Deny this login request?'))return;try{await api('/api/admin/login-requests/'+encodeURIComponent(id)+'/deny',{method:'POST'});await loadLoginRequests()}catch(e){showErr(e.message)}}
+function notifyLocal(title,body){try{if('Notification' in window && Notification.permission==='granted')new Notification(title,{body});}catch(e){}}
+async function enableNotifications(){try{if('Notification' in window && Notification.permission==='default')await Notification.requestPermission()}catch(e){}}
+
+function renderUsers(users){
+  lastUsers=users||[];
+  document.getElementById('cTotal').textContent=lastUsers.length;
+  document.getElementById('cOnline').textContent=lastUsers.filter(u=>u.online).length;
+  document.getElementById('cActive').textContent=lastUsers.filter(u=>u.status==='active').length;
+  document.getElementById('cSusp').textContent=lastUsers.filter(u=>u.status==='suspended').length;
+  const pending=lastUsers.filter(u=>u.status==='pending').length;
+  const wrap=document.getElementById('users');
+  if(!lastUsers.length){wrap.innerHTML='<div class="empty">No teacher accounts yet.</div>';return}
+  let h='<table><thead><tr><th>User</th><th>School</th><th>Status</th><th>Online</th><th>Actions</th></tr></thead><tbody>';
+  lastUsers.forEach(u=>{
+    const statusClass=u.role==='owner'?'owner':u.status==='suspended'?'suspended':u.status==='pending'?'pending':'active';
+    const statusLabel=u.role==='owner'?'OWNER':u.status.toUpperCase();
+    let actions='—';
+    if(u.role!=='owner'){
+      if(u.status==='pending') actions=`<button class="btn a" onclick="act('activate','${u.id}')">Approve Account</button><button class="btn d" onclick="act('delete','${u.id}')">Reject/Delete</button>`;
+      else if(u.status==='suspended') actions=`<button class="btn a" onclick="act('activate','${u.id}')">Activate</button><button class="btn d" onclick="act('delete','${u.id}')">Delete</button>`;
+      else actions=`<button class="btn s" onclick="act('suspend','${u.id}')">Suspend</button><button class="btn k" onclick="act('logout','${u.id}')">Force Sign-out</button><button class="btn d" onclick="act('delete','${u.id}')">Delete</button>`;
+    }
+    h+=`<tr><td><b>${esc(u.name)}</b><br><span style="font-size:11px;color:#6b7280">${esc(u.email)}</span></td><td>${esc(u.school||'—')}</td><td><span class="pill ${statusClass}">${statusLabel}</span></td><td><span class="dot ${u.online?'on':'off'}"></span>${u.online?'Online':'Offline'}${u.lastActive?'<br><span style="font-size:10px;color:#6b7280">'+ago(u.lastActive)+'</span>':''}</td><td>${actions}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  if(pending) h+=`<div class="hint"><b>${pending}</b> account(s) are waiting for your approval. An owner email is also sent when SMTP is configured.</div>`;
+  wrap.innerHTML=h;
+}
+async function act(kind,id){let reason='';if(kind==='delete'&&!confirm('Permanently delete this account?'))return;if(kind==='suspend')reason=prompt('Optional suspension reason:')||'';try{if(kind==='delete'){await api('/api/admin/users/'+id,{method:'DELETE'})}else if(kind==='suspend'){await api('/api/admin/users/'+id+'/suspend',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},hdr()),body:JSON.stringify({reason})})}else{await api('/api/admin/users/'+id+'/'+kind,{method:'POST'})}await loadUsers()}catch(e){showErr(e.message)}}
+async function loadUsers(){try{const d=await api('/api/admin/users');renderUsers(d.users)}catch(e){showErr(e.message)}}
+function renderLive(sessions){const wrap=document.getElementById('live');if(!sessions||!sessions.length){wrap.innerHTML='<div class="empty">No teachers are online.</div>';return}let h='<table><thead><tr><th>Teacher</th><th>Grade</th><th>Last activity</th><th>Connections</th></tr></thead><tbody>';sessions.forEach(s=>h+=`<tr><td><span class="dot on"></span><b>${esc(s.name)}</b><br><span style="font-size:11px;color:#6b7280">${esc(s.email)}</span></td><td>${s.grade==null?'—':'Grade '+s.grade}</td><td>${ago(s.lastActive)}</td><td>${s.sockets}</td></tr>`);h+='</tbody></table>';wrap.innerHTML=h}
+(async function(){if(!(await guard()))return;enableNotifications();await Promise.all([loadUsers(),loadLoginRequests()]);const socket=io({auth:{token:TOKEN}});socket.on('presence',renderLive);socket.on('login-request',async r=>{await loadLoginRequests();notifyLocal('🔐 ORPA login request',r.name+' is requesting access. Open Admin to approve.');});socket.on('login-approved',()=>loadLoginRequests());socket.on('login-denied',()=>loadLoginRequests());socket.on('connect_error',()=>showErr('Live connection failed — request notifications may be delayed.'));setInterval(loadUsers,20000);setInterval(loadLoginRequests,4000)})();
+</script>
+</body>
+</html>
